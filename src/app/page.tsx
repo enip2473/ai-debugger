@@ -4,14 +4,19 @@
 import { useState } from 'react';
 import { CodeExecution } from '@/utils/piston';
 import { pythonMainFunction } from '@/utils/prompts';
-import JsonDisplay from '@/app/jsonDisplay';
+import JsonDisplay, {limitsJson, variablesJson} from '@/app/jsonDisplay';
+
+type variables = {
+  limits: limitsJson;
+  variables: variablesJson;
+}
 
 export default function Home() {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [inputLimit, setInputLimit] = useState('');
-  const [outputLimit, setOutputLimit] = useState('');
+  const [inputLimit, setInputLimit] = useState<variables>({limits: {}, variables: {}});
+  const [outputLimit, setOutputLimit] = useState<variables>({limits: {}, variables: {}});
   const [generator, setGenerator] = useState('');
   const [validator, setValidator] = useState('');
   const [checker, setChecker] = useState('');

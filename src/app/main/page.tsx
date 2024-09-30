@@ -11,6 +11,7 @@ import {
   TextField,
   Typography,
   Paper,
+  SelectChangeEvent
 } from '@mui/material';
 import { Editor } from '@monaco-editor/react';
 
@@ -22,11 +23,11 @@ export default function CodeEditorPage() {
   const fileInputRef = useRef<HTMLInputElement>(null); 
 
 
-  const handleSourceChange = (e: any) => {
+  const handleSourceChange = (e: SelectChangeEvent<string>) => {
     setProblemSource(e.target.value);
   };
 
-  const handleNameChange = (e: any) => {
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProblemName(e.target.value);
   };
 
@@ -34,8 +35,12 @@ export default function CodeEditorPage() {
     setCode(value || '');
   };
 
-  const handleFileUpload = (event: any) => {
-    const file = event.target.files[0];
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) {
+      return
+    }
+    const file = files[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -126,7 +131,7 @@ export default function CodeEditorPage() {
 
             <Box mt={2}>
               <Button variant="contained" color="primary">
-                Let's Go!
+                Let&apos;s Go!
               </Button>
             </Box>
           </Box>

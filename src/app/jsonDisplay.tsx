@@ -1,15 +1,29 @@
-import { useState } from 'react';
+export type limitsJson = Record<string, {
+  limit: string;
+  description: string;
+  variables: string[];
+}>
 
-interface JsonEditorProps {
-  jsonObject: any;
-  setJsonObject: (newJsonObject: any) => void;
+export type variablesJson = Record<string, {
+  type: string;
+  dataType: string;
+  description: string;
+}>;
+
+export interface JsonEditorProps {
+  jsonObject: {
+    limits: limitsJson
+    variables: variablesJson
+  };
+  setJsonObject: (newJsonObject: { limits: limitsJson; variables: variablesJson}) => void;
   title: string;
 }
 
 export default function JsonEditor({ jsonObject, setJsonObject, title }: JsonEditorProps) {
   const handleInputChange = (section: string, key: string, field: string, value: string | string[]) => {
     const updatedJson = { ...jsonObject };
-    (updatedJson as any)[section][key][field] = value;
+    // @ts-expect-error - TS doesn't know that section, key, and field are valid keys
+    updatedJson[section][key][field] = value;
     setJsonObject(updatedJson);
   };
 
