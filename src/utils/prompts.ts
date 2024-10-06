@@ -16,7 +16,7 @@ Based on the above description, generate a JSON object with the following format
      - "variables" (the name(s) of the variable(s) to which the limit is applied).
 
 Please separate input and output variables.
-`;
+`
 
 export const limitGenerationExample = `
 {
@@ -72,9 +72,9 @@ export const limitGenerationExample = `
     }
   }
 }
-`;
+`
 
-export const generatorPrompt =`
+export const generatorPrompt = `
 You are a Python developer tasked with writing a script to automatically generate valid test cases based on the following criteria:
 
 1. The user has provided the following natural language description:
@@ -94,7 +94,7 @@ The Python script should include:
 - A function named generator that generates valid test cases for each variable. This function should return a dictionary containing the generated values.
 - The main function should call the generator function exactly once and return its result in json format.
 - Proper comments and documentation explaining how the test case generation works.
-`;
+`
 
 export const validatorPrompt = `
 You are a Python developer tasked with writing a script to validate user input based on the following criteria:
@@ -119,7 +119,7 @@ Each validation function should:
     - Raise exceptions or return an error message if the input is out of bounds.
 
 Ensure the code is well-commented and easy to understand.
-`;
+`
 
 export const checkerPrompt = `
 You are a Python developer tasked with creating a checker function to validate the user's output against the given input and specified conditions. Your task is to write a Python function that:
@@ -217,7 +217,7 @@ Expected Output:
   "is_valid": true,
   "message": "The user's output matches the expected result."
 }
-`;
+`
 
 export const pythonMainFunction = `
 from string import *
@@ -286,4 +286,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-`;
+`
