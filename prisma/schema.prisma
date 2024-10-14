@@ -1,0 +1,109 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  UserID      Int          @id @default(autoincrement())
+  Email       String
+  Submissions Submission[]
+}
+
+model Problem {
+  ProblemID       Int          @id @default(autoincrement())
+  Source          String
+  SourceProblemId String
+  ProblemName     String
+  RawStatement    String
+  ProblemType     String
+  Variables       String
+  Limits          String
+  Validators      Validator[]
+  Checkers        Checker[]
+  Solutions       Solution[]
+  Generators      Generator[]
+  TestCases       TestCase[]
+  Submissions     Submission[]
+}
+
+model Validator {
+  ValidatorID    Int     @id @default(autoincrement())
+  ProblemId      Int
+  CodingLanguage String
+  Code           String
+  Upvote         Int
+  Downvote       Int
+  IsGenerated    Boolean
+  Problem        Problem @relation(fields: [ProblemId], references: [ProblemID])
+}
+
+model Checker {
+  CheckerID      Int     @id @default(autoincrement())
+  ProblemId      Int
+  CodingLanguage String
+  Code           String
+  Upvote         Int
+  Downvote       Int
+  IsGenerated    Boolean
+  Problem        Problem @relation(fields: [ProblemId], references: [ProblemID])
+}
+
+model Solution {
+  SolutionID     Int     @id @default(autoincrement())
+  ProblemId      Int
+  CodingLanguage String
+  Code           String
+  Upvote         Int
+  Downvote       Int
+  IsGenerated    Boolean
+  Problem        Problem @relation(fields: [ProblemId], references: [ProblemID])
+}
+
+model Generator {
+  GeneratorID    Int     @id @default(autoincrement())
+  ProblemId      Int
+  CodingLanguage String
+  Code           String
+  Upvote         Int
+  Downvote       Int
+  IsGenerated    Boolean
+  Problem        Problem @relation(fields: [ProblemId], references: [ProblemID])
+}
+
+model TestCase {
+  TestCaseID  Int     @id @default(autoincrement())
+  ProblemId   Int
+  Content     String
+  IsGenerated Boolean
+  Upvote      Int
+  Downvote    Int
+  Problem     Problem @relation(fields: [ProblemId], references: [ProblemID])
+}
+
+model Submission {
+  SubmissionID   Int        @id @default(autoincrement())
+  UserID         Int
+  ProblemId      Int
+  CreatedTime    DateTime
+  CodingLanguage String
+  Status         String
+  User           User       @relation(fields: [UserID], references: [UserID])
+  Problem        Problem    @relation(fields: [ProblemId], references: [ProblemID])
+  Revision       Revision[]
+}
+
+model Revision {
+  RevisionID     Int        @id @default(autoincrement())
+  SubmissionID   Int
+  RevisionNumber Int
+  RawCode        String
+  CreatedTime    DateTime
+  CompilerOutput String
+  LLMsuggestions String
+  CheckerOutput  String
+  Submission     Submission @relation(fields: [SubmissionID], references: [SubmissionID])
+}

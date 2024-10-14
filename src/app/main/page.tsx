@@ -14,12 +14,16 @@ import {
   SelectChangeEvent,
 } from '@mui/material'
 import { Editor } from '@monaco-editor/react'
+import axios from 'axios' // Import axios
+import { useRouter } from 'next/navigation' // Import useRouter for redirection
 
 export default function CodeEditorPage() {
   const [problemSource, setProblemSource] = useState('Leetcode')
   const [problemName, setProblemName] = useState('')
   const [code, setCode] = useState('')
+  const [loading, setLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter() // Initialize the router
 
   const handleSourceChange = (e: SelectChangeEvent<string>) => {
     setProblemSource(e.target.value)
@@ -54,6 +58,24 @@ export default function CodeEditorPage() {
   const triggerFileInput = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click()
+    }
+  }
+
+  const handleSubmit = async () => {
+    setLoading(true)
+    try {
+      const response = await axios.post('/api/submit', {
+        userId: 1,
+        source: problemSource,
+        name: problemName,
+        code: code,
+      })
+      router.push(response.data.url) // Redirect to the success page (you can change the URL as needed)
+    } catch (error) {
+      console.error('Error submitting code:', error)
+      alert('Failed to submit code') // Show an error message
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -121,8 +143,13 @@ export default function CodeEditorPage() {
             </Box>
 
             <Box mt={2}>
-              <Button variant='contained' color='primary'>
-                Let&apos;s Go!
+              <Button
+                variant='contained'
+                color='primary'
+                onClick={handleSubmit}
+                disabled={loading} // Disable the button while loading
+              >
+                {loading ? 'Submitting...' : 'Let\'s Go!'}
               </Button>
             </Box>
           </Box>
