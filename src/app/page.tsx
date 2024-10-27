@@ -1,271 +1,166 @@
-// app/page.tsx
 'use client'
+import { useState, useRef } from 'react'
+import {
+  Box,
+  Button,
+  Container,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  Typography,
+  Paper,
+  SelectChangeEvent,
+} from '@mui/material'
+import { Editor } from '@monaco-editor/react'
+import axios from 'axios' // Import axios
+import { useRouter } from 'next/navigation' // Import useRouter for redirection
 
-import { useState } from 'react'
-import { CodeExecution } from '@/utils/piston'
-import { pythonMainFunction } from '@/utils/prompts'
-import JsonDisplay, { limitsJson, variablesJson } from '@/app/jsonDisplay'
-
-type variables = {
-  limits: limitsJson
-  variables: variablesJson
-}
-
-export default function Home() {
-  const [prompt, setPrompt] = useState('')
+export default function CodeEditorPage() {
+  const [problemSource, setProblemSource] = useState('Leetcode')
+  const [problemName, setProblemName] = useState('')
+  const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [inputLimit, setInputLimit] = useState<variables>({ limits: {}, variables: {} })
-  const [outputLimit, setOutputLimit] = useState<variables>({ limits: {}, variables: {} })
-  const [generator, setGenerator] = useState('')
-  const [validator, setValidator] = useState('')
-  const [checker, setChecker] = useState('')
-  const [testCase, setTestCase] = useState('')
-  const [userCode, setUserCode] = useState('') // Added for user's input code
-  const [testResult, setTestResult] = useState('') // Result after test execution
-  const [checkerResult, setcheckerResult] = useState('') // Result after checker execution
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter() // Initialize the router
 
-    try {
-      const response = await fetch('/api/variables', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-      })
+  const handleSourceChange = (e: SelectChangeEvent<string>) => {
+    setProblemSource(e.target.value)
+  }
 
-      const data = await response.json()
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProblemName(e.target.value)
+  }
 
-      if (response.ok) {
-        let parsedData
-        try {
-          parsedData = JSON.parse(data.response) // Parse the string into a JSON object
-        } catch (parseError) {
-          console.error(parseError)
-          setError('Failed to parse response as JSON')
-          return
+  const handleEditorChange = (value: string | undefined) => {
+    setCode(value || '')
+  }
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files) {
+      return
+    }
+    const file = files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const fileContent = e.target?.result
+        if (typeof fileContent === 'string') {
+          setCode(fileContent) // Update Monaco editor content
         }
-        setInputLimit(parsedData.input)
-        setOutputLimit(parsedData.output)
-      } else {
-        setError(data.error || 'Failed to generate response')
       }
-    } catch (err) {
-      setError('Something went wrong')
-    } finally {
-      setLoading(false)
+      reader.readAsText(file) // Read file as text
     }
   }
 
-  const handleGenerateTest = async () => {
-    setLoading(true)
-    setError('')
-
-    try {
-      const generatorResponse = await fetch('/api/generator', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          naturalLanguage: prompt,
-          limit: inputLimit,
-        }),
-      })
-
-      const validatorResponse = await fetch('/api/validator', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          naturalLanguage: prompt,
-          limit: inputLimit,
-        }),
-      })
-
-      const checkerResponse = await fetch('/api/checker', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          naturalLanguage: prompt,
-          limit: outputLimit,
-        }),
-      })
-
-      const generatorData = await generatorResponse.json()
-      const validatorData = await validatorResponse.json()
-      const checkerData = await checkerResponse.json()
-
-      const generateResult = await CodeExecution('python', generatorData.response)
-      const validateResult = await CodeExecution(
-        'python',
-        validatorData.response,
-        generateResult.stdout,
-      )
-
-      setChecker(checkerData.response)
-      console.log(generateResult)
-      console.log(validateResult)
-      if (validateResult.code === 0) {
-        setTestCase(generateResult.stdout)
-      }
-      if (generatorResponse.ok && validatorResponse.ok) {
-        setGenerator(generatorData.response)
-        setValidator(validatorData.response)
-      } else {
-        setError(generatorData.error + validatorData.error || 'Failed to generate response')
-      }
-    } catch (err) {
-      setError('Something went wrong')
-    } finally {
-      setLoading(false)
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
     }
   }
 
-  const handleRunTest = async () => {
+  const handleSubmit = async () => {
     setLoading(true)
-    setError('')
-    const fullCode = pythonMainFunction.replace('{userCode}', userCode) // Combine the main function with user's input code
-    console.log(fullCode)
     try {
-      const result = await CodeExecution('python', fullCode, testCase) // Execute user code with test case
-      console.log(result)
-      const parsedResult = JSON.parse(result.stdout) // Parse stdout as JSON
-      const checkerInput = JSON.stringify({
-        input: JSON.parse(testCase),
-        output: parsedResult.output,
+      const response = await axios.post('/api/submit', {
+        userId: 1,
+        source: problemSource,
+        name: problemName,
+        code: code,
       })
-      const checkerExecution = await CodeExecution('python', checker, checkerInput) // Execute output checker
-      setTestResult(result.stdout)
-      console.log(checkerExecution)
-      setcheckerResult(checkerExecution.stdout)
-    } catch (err) {
-      console.error('Error parsing result:', error) // Handle potential parsing errors
-      setError('Failed to run test')
+      router.push(response.data.url) // Redirect to the success page (you can change the URL as needed)
+    } catch (error) {
+      console.error('Error submitting code:', error)
+      alert('Failed to submit code') // Show an error message
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className='flex-col container mx-auto p-8 w-4/5 justify-center items-center'>
-      <h1 className='text-3xl font-bold text-center mb-6'>AI Debugger</h1>
-      <form onSubmit={handleSubmit} className='space-y-4 mx-16'>
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder='Enter natural language description...'
-          rows={4}
-          required
-          className='w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
-        />
-        <button
-          type='submit'
-          disabled={loading}
-          className={`w-full py-2 px-4 rounded-lg text-white font-semibold ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'}`}
-        >
-          {loading ? 'Generating...' : 'Identify Variables'}
-        </button>
-      </form>
+    <Container className='w-4/5'>
+      <Paper elevation={3}>
+        <Box display='flex' height='100vh'>
+          <Box width='25%' p={4} sx={{ backgroundColor: '#f5f5f5', borderRight: '1px solid #ddd' }}>
+            <Typography variant='h6' gutterBottom>
+              Select Problem Source
+            </Typography>
+            <FormControl fullWidth variant='outlined' margin='normal'>
+              <InputLabel id='problem-source-label'>Source</InputLabel>
+              <Select
+                labelId='problem-source-label'
+                value={problemSource}
+                onChange={handleSourceChange}
+                label='Source'
+              >
+                <MenuItem value='Leetcode'>Leetcode</MenuItem>
+                <MenuItem value='Codeforces'>Codeforces</MenuItem>
+                <MenuItem value='AP325'>AP325</MenuItem>
+              </Select>
+            </FormControl>
 
-      {error && <p className='mt-4 text-red-500 text-center'>{error}</p>}
-
-      {inputLimit && (
-        <>
-          <JsonDisplay
-            jsonObject={inputLimit}
-            setJsonObject={setInputLimit}
-            title='Input Variables and Limit'
-          />
-        </>
-      )}
-
-      {outputLimit && (
-        <>
-          <JsonDisplay
-            jsonObject={outputLimit}
-            setJsonObject={setOutputLimit}
-            title='Output Variables and Limit'
-          />
-          <button
-            disabled={loading}
-            onClick={handleGenerateTest}
-            className={`mt-4 py-2 px-4 rounded-lg text-white font-semibold ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'}`}
-          >
-            {loading ? 'Generating...' : 'Generate Test Code'}
-          </button>
-        </>
-      )}
-
-      {generator && (
-        <div className='mt-4'>
-          <h2 className='text-lg font-semibold mb-2'>Generated Test Generator</h2>
-          <pre className='bg-gray-100 p-4 rounded-lg'>{generator}</pre>
-        </div>
-      )}
-
-      {validator && (
-        <div className='mt-4'>
-          <h2 className='text-lg font-semibold mb-2'>Generated Test Validator</h2>
-          <pre className='bg-gray-100 p-4 rounded-lg'>{validator}</pre>
-        </div>
-      )}
-
-      {checker && (
-        <div className='mt-4'>
-          <h2 className='text-lg font-semibold mb-2'>Generated Output Checker</h2>
-          <pre className='bg-gray-100 p-4 rounded-lg'>{checker}</pre>
-        </div>
-      )}
-
-      {testCase && (
-        <div className='mt-8 flex space-x-8'>
-          {/* Left Side: JSON Test Case Display */}
-          <div className='w-1/2 bg-gray-100 p-4 rounded-lg'>
-            <h2 className='text-lg font-semibold mb-2'>Generated Test Case</h2>
-            <pre>{JSON.stringify(testCase, null, 2)}</pre>
-          </div>
-
-          {/* Right Side: User Input Code */}
-          <div className='w-1/2'>
-            <textarea
-              value={userCode}
-              onChange={(e) => setUserCode(e.target.value)}
-              placeholder='Enter your code here...'
-              rows={10}
-              className='w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+            <Typography variant='h6' className='mt-2' gutterBottom>
+              Problem Name / ID
+            </Typography>
+            <TextField
+              fullWidth
+              variant='outlined'
+              margin='normal'
+              label='Problem Name/Number'
+              value={problemName}
+              onChange={handleNameChange}
             />
-            <button
-              disabled={loading}
-              onClick={handleRunTest}
-              className={`mt-4 py-2 px-4 rounded-lg text-white font-semibold ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'}`}
-            >
-              {loading ? 'Running...' : 'Run Test'}
-            </button>
+          </Box>
 
-            {testResult && (
-              <div className='mt-4 bg-gray-100 p-4 rounded-lg'>
-                <h2 className='text-lg font-semibold mb-2'>Test Result</h2>
-                <pre>{testResult}</pre>
-              </div>
-            )}
+          {/* Right Section - Code Editor & File Upload */}
+          <Box width='75%' p={4} className='flex flex-col'>
+            <Typography variant='h6'>Your Code</Typography>
 
-            {checkerResult && (
-              <div className='mt-4 bg-gray-100 p-4 rounded-lg'>
-                <h2 className='text-lg font-semibold mb-2'>Checker Result</h2>
-                <pre>{checkerResult}</pre>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+            <Editor
+              height='80%'
+              language='python'
+              value={code}
+              onChange={handleEditorChange}
+              theme='vs-dark'
+              options={{
+                padding: { 
+                  top: 10, 
+                  bottom: 10
+                },
+                minimap: {
+                  enabled: false,
+                },
+              }}
+            />
+
+            <Box mt={2}>
+              <Button variant='contained' onClick={triggerFileInput}>
+                Upload File
+                <input
+                  type='file'
+                  ref={fileInputRef}
+                  hidden
+                  accept='.cpp,.py' // Adjust based on the file types you want to support
+                  onChange={handleFileUpload} // Handle file change
+                />
+              </Button>
+            </Box>
+
+            <Box mt={2}>
+              <Button
+                variant='contained'
+                color='primary'
+                onClick={handleSubmit}
+                disabled={loading} // Disable the button while loading
+              >
+                {loading ? 'Submitting...' : 'Let\'s Go!'}
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      </Paper>
+    </Container>
   )
 }
