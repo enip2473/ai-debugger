@@ -30,8 +30,8 @@ export async function POST(req: Request) {
           ProblemName: name,
           RawStatement: '',
           ProblemType: '',
-          Variables: '',
-          Limits: '',
+          Input: '',
+          Output: '',
         },
       })
     }

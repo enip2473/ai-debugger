@@ -20,8 +20,8 @@ model Problem {
   ProblemName     String
   RawStatement    String
   ProblemType     String
-  Variables       String
-  Limits          String
+  Input           String
+  Output          String
   Validators      Validator[]
   Checkers        Checker[]
   Solutions       Solution[]

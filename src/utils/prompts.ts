@@ -309,3 +309,23 @@ Compiler Output:
 
 {compilerOutput}
 `
+
+export const htmlToProblemPrompt = `
+You are a developer working on a tool that converts raw content into a problem statement JSON structure for a coding challenge platform. Your task is to write a Python function that takes an  string as input and extracts the relevant information to generate a valid JSON.
+
+Here is the content you need to parse:
+
+--------
+
+{htmlContent}
+
+--------
+
+Output the JSON object with the parsed problem statement, input variables, and output variables.
+
+For example, for the famous two-sum problem, the JSON content you should output look like this:
+
+{example}
+
+Follow the format of the example
+`
